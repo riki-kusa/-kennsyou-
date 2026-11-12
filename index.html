@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scratchバックパック 外部サイト接続検証</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.65; max-width: 760px; padding: 24px 16px; margin: auto; color: #1b2534; }
+    h1 { font-size: 1.5rem; }
+    section { padding: 16px; background: #f1f5f9; border-radius: 10px; margin: 16px 0; }
+    button { padding: 10px 14px; border: 1px solid #64748b; border-radius: 7px; background: white; cursor: pointer; font-size: 1rem; }
+    input { padding: 10px; max-width: 100%; box-sizing: border-box; border: 1px solid #64748b; border-radius: 6px; font-size: 1rem; }
+    label { display: block; margin-bottom: 6px; }
+    pre { background: #111827; color: #e5e7eb; padding: 16px; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 90px; border-radius: 8px; }
+    .notice { border-left: 4px solid #b45309; padding-left: 14px; }
+    small { color: #475569; }
+  </style>
+</head>
+<body>
+  <h1>Scratchバックパック 外部サイト接続検証</h1>
+  <p>一般の外部WebサイトからScratchバックパックサーバーへ通信できるかを調べます。<strong>素材の追加・削除・更新は行いません。</strong></p>
+  <section>
+    <h2>テストA：GET</h2>
+    <p>バックパックサーバーから、JavaScriptが応答を読み取れるかを確認します。</p>
+    <button id="get" type="button">A：GETを試す</button>
+  </section>
+  <section>
+    <h2>テストB：POSTの通信条件</h2>
+    <label for="username">自分のScratchユーザー名（パスワードは入力しない）</label>
+    <input id="username" autocomplete="off" placeholder="Scratchユーザー名">
+    <p><small>無効なダミートークンと不完全なデータを送信し、CORSの事前確認や認証による拒否を調べます。正常な保存要求ではありません。</small></p>
+    <button id="post" type="button">B：POSTの条件を試す</button>
+  </section>
+  <p class="notice"><strong>安全上の注意：</strong>Scratchのパスワード、Cookie、セッショントークン、X-Tokenを入力したり共有したりしないでください。これは公式連携機能ではなく、通信条件だけの検証です。</p>
+  <h2>結果</h2>
+  <pre id="result" aria-live="polite">ここに結果が表示されます。</pre>
+  <button id="copy" type="button">結果をコピー</button>
+  <p><small>詳しく調べる場合：Chrome開発者ツール → Network を開き、backpack.scratch.mit.edu に対する OPTIONS / POST の有無と状態を確認してください。結果共有前に個人情報を隠してください。</small></p>
+  <script>
+    const output = document.querySelector("#result");
+    const log = (message) => { output.textContent += message + "\n"; };
+    const begin = (name) => {
+      output.textContent = "";
+      log(name);
+      log("ページのオリジン: " + location.origin);
+    };
+    const showResponse = (response) => {
+      log("JavaScriptで応答を読めた: はい");
+      log("HTTPステータス: " + response.status);
+      log("response.ok: " + response.ok);
+      log("response.type: " + response.type);
+    };
+    const showError = (error) => {
+      log("JavaScriptで応答を読めた: いいえ");
+      log("エラー: " + error.name + ": " + error.message);
+      log("※ CORS以外にもDNS・接続障害・拡張機能による遮断が考えられます。");
+      log("※ 詳細はNetworkタブの通信結果で判断してください。");
+    };
+    document.querySelector("#get").addEventListener("click", async () => {
+      begin("A：GET通信");
+      try {
+        const response = await fetch("https://backpack.scratch.mit.edu/", {
+          method: "GET",
+          mode: "cors",
+          credentials: "omit",
+          cache: "no-store"
+        });
+        showResponse(response);
+        log("※ GETの結果だけでは保存可能か判断できません。");
+      } catch (error) { showError(error); }
+    });
+    document.querySelector("#post").addEventListener("click", async () => {
+      const username = document.querySelector("#username").value.trim();
+      if (!/^[a-zA-Z0-9_-]{1,30}$/.test(username)) {
+        output.textContent = "正しい形式のScratchユーザー名を入力してください。";
+        return;
+      }
+      begin("B：無効な認証情報によるPOST通信の確認");
+      log("本物の認証情報: 送信しない / Cookie: 送信しない");
+      log("素材データ: 送信しない（無効なテスト用データのみ）");
+      try {
+        const response = await fetch("https://backpack.scratch.mit.edu/" + encodeURIComponent(username), {
+          method: "POST",
+          mode: "cors",
+          credentials: "omit",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Token": "INVALID_TEST_TOKEN_NO_PRIVILEGES"
+          },
+          body: JSON.stringify({ invalid_probe: true })
+        });
+        showResponse(response);
+        if ([401, 403].includes(response.status)) {
+          log("認証または権限によって拒否された可能性があります。");
+        } else if ([400, 422].includes(response.status)) {
+          log("リクエスト形式が不正として拒否された可能性があります。");
+        }
+      } catch (error) { showError(error); }
+      log("※ この結果だけでは、実際に素材を保存できることの証明にはなりません。");
+    });
+    document.querySelector("#copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(output.textContent);
+        alert("結果をコピーしました。");
+      } catch {
+        alert("コピーできませんでした。結果を手動で選択してください。");
+      }
+    });
+  </script>
+</body>
+</html>
