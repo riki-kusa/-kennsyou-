@@ -1,0 +1,24 @@
+name: One-time backpack CORS header inspection
+on:
+  push:
+    paths:
+      - .github/workflows/cors-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read public HTTP and CORS response headers
+        shell: bash
+        run: |
+          set -u
+          echo "Checking public endpoint without cookies or login"
+          http_code=$(curl -sS --connect-timeout 10 --max-time 20 -D /tmp/headers -o /dev/null \
+            -H 'Origin: https://riki-kusa.github.io' \
+            -w '%{http_code}' 'https://backpack.scratch.mit.edu/') || http_code="curl failed"
+          echo "HTTP: $http_code"
+          echo "CORS headers:"
+          grep -iE '^(access-control-allow-origin|access-control-allow-credentials|access-control-allow-methods|vary):' /tmp/headers || echo "(no relevant headers or no response)"
+          echo "This test performs one read-only GET without authenticating."
