@@ -32,6 +32,12 @@
     <button id="post" type="button">B：POSTの条件を試す</button>
   </section>
   <p class="notice"><strong>安全上の注意：</strong>Scratchのパスワード、Cookie、セッショントークン、X-Tokenを入力したり共有したりしないでください。これは公式連携機能ではなく、通信条件だけの検証です。</p>
+  <section>
+    <h2>テストC：Cookie付きGETのCORS確認</h2>
+    <p>Scratchにログインした同じブラウザで、Cookieを利用する設定の通信がブラウザに許可されるかを調べます。<strong>認証成功や保存権限の証明にはなりません。</strong></p>
+    <p><small>アクセス先はScratch公式のバックパックサーバーのみです。Cookie・認証情報・レスポンス本文は画面に表示しません。素材の保存や変更はしません。</small></p>
+    <button id="credGet" type="button">C：Cookie付きGETを試す</button>
+  </section>
   <h2>結果</h2>
   <pre id="result" aria-live="polite">ここに結果が表示されます。</pre>
   <button id="copy" type="button">結果をコピー</button>
@@ -97,6 +103,23 @@
         }
       } catch (error) { showError(error); }
       log("※ この結果だけでは、実際に素材を保存できることの証明にはなりません。");
+    });
+    document.querySelector("#credGet").addEventListener("click", async () => {
+      begin("C：Cookieを許可する設定でのGET（読み取り専用）");
+      log("認証情報や応答本文は表示・収集しません。");
+      try {
+        const response = await fetch("https://backpack.scratch.mit.edu/", {
+          method: "GET",
+          mode: "cors",
+          credentials: "include",
+          cache: "no-store"
+        });
+        showResponse(response);
+        log("※ この結果でCookieが実際に送られたか、認証されたかは判定できません。");
+      } catch (error) {
+        showError(error);
+        log("※ credentials:'include' ではブラウザが認証付きCORSの条件を厳しく確認します。");
+      }
     });
     document.querySelector("#copy").addEventListener("click", async () => {
       try {
