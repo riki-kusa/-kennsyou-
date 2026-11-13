@@ -1,0 +1,40 @@
+{
+  "checked_at_utc": "2026-11-13T03:17:40.695148+00:00",
+  "purpose": "Small read-only test of public endpoint. Not a rate limit stress test.",
+  "user": "griffpatch (public example account)",
+  "results": [
+    {
+      "requested_max": 1,
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "body_length": 467,
+      "li_open_tags": 1,
+      "retry_after": null
+    },
+    {
+      "requested_max": 10,
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "body_length": 4485,
+      "li_open_tags": 10,
+      "retry_after": null
+    },
+    {
+      "requested_max": 100,
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "body_length": 16155,
+      "li_open_tags": 39,
+      "retry_after": null
+    },
+    {
+      "requested_max": 500,
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "body_length": 16155,
+      "li_open_tags": 39,
+      "retry_after": null
+    }
+  ],
+  "note": "li_open_tags may include markup not representing an activity. Status/code alone do not establish official availability."
+}
